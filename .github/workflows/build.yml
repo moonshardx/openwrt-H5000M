@@ -1,0 +1,120 @@
+name: 构建 H5000M 固件
+
+on:
+  workflow_dispatch:
+    inputs:
+      immortalwrt_ref:
+        description: ImmortalWrt 分支、标签或提交，例如 v25.12.0、master
+        required: true
+        default: v25.12.0
+      runner_type:
+        description: 编译运行环境；github-hosted 使用 GitHub 托管机，self-hosted 使用你的本地 Runner
+        required: true
+        type: choice
+        default: github-hosted
+        options:
+          - github-hosted
+          - self-hosted
+      make_jobs:
+        description: 并行编译线程数；留空表示使用全部可用核心
+        required: false
+        default: ""
+      qmodem:
+        description: 集成 QModem 相关包，并排除重复的旧版界面包
+        required: true
+        type: boolean
+        default: true
+      passwall:
+        description: 集成 luci-app-passwall
+        required: true
+        type: boolean
+        default: false
+      mosdns:
+        description: 集成 luci-app-mosdns
+        required: true
+        type: boolean
+        default: false
+      upnp:
+        description: 集成 luci-app-upnp
+        required: true
+        type: boolean
+        default: false
+      homeproxy:
+        description: 集成 luci-app-homeproxy
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: 构建 H5000M 固件
+    runs-on: ${{ inputs.runner_type == 'self-hosted' && 'self-hosted' || 'ubuntu-24.04' }}
+
+    steps:
+      - name: 检出构建项目
+        uses: actions/checkout@v4
+
+      - name: 检查本地 Runner 环境
+        if: inputs.runner_type == 'self-hosted'
+        run: |
+          if [ "$(uname -s)" != "Linux" ]; then
+            echo "本地 Runner 必须运行在 Linux/Ubuntu 或 WSL2 环境。"
+            exit 1
+          fi
+          echo "本地 Runner 检查通过。"
+
+      - name: 安装编译依赖
+        if: inputs.runner_type == 'github-hosted'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ack antlr3 asciidoc autoconf automake autopoint binutils bison \
+            build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler \
+            ecj fastjar flex gawk gettext gcc-multilib g++-multilib git gnutls-dev \
+            gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev \
+            libncurses-dev libpython3-dev libreadline-dev libssl-dev libtool \
+            libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano ninja-build \
+            p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply \
+            python3-docutils python3-pyelftools qemu-utils re2c rsync scons \
+            squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim \
+            wget xmlto xxd zlib1g-dev zstd
+
+      - name: 准备 ImmortalWrt 源码
+        env:
+          INCLUDE_QMODEM: ${{ inputs.qmodem && 'true' || 'false' }}
+          INCLUDE_PASSWALL: ${{ inputs.passwall && 'true' || 'false' }}
+          INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
+          INCLUDE_UPNP: ${{ inputs.upnp && 'true' || 'false' }}
+          INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
+        run: bash ./scripts/prepare-source.sh "${{ inputs.immortalwrt_ref }}"
+
+      - name: 更新并安装软件源
+        working-directory: openwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: 生成最终配置
+        working-directory: openwrt
+        run: make defconfig
+
+      - name: 下载源码包
+        working-directory: openwrt
+        run: make download -j"$(nproc)"
+
+      - name: 编译固件
+        working-directory: openwrt
+        run: |
+          if [ -n "${{ inputs.make_jobs }}" ]; then
+            make -j"${{ inputs.make_jobs }}"
+          else
+            make -j"$(nproc)"
+          fi
+
+      - name: 上传固件产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: immortalwrt-h5000m-${{ inputs.immortalwrt_ref }}
+          path: |
+            openwrt/bin/targets/mediatek/filogic/*
