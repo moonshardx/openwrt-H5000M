@@ -44,6 +44,14 @@ on:
         required: true
         type: boolean
         default: false
+      create_release:
+        description: 编译完成后发布到 GitHub Releases
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   build-github-hosted:
@@ -110,6 +118,23 @@ jobs:
           path: |
             openwrt/bin/targets/mediatek/filogic/*
 
+      - name: 准备发布信息
+        if: ${{ inputs.create_release }}
+        run: |
+          safe_ref="$(printf '%s' '${{ inputs.immortalwrt_ref }}' | tr '/:@ ' '----')"
+          echo "RELEASE_TAG=immortalwrt-h5000m-${safe_ref}-${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=ImmortalWrt-H5000M ${{ inputs.immortalwrt_ref }} 第 ${{ github.run_number }} 次构建" >> "$GITHUB_ENV"
+
+      - name: 发布到 GitHub Releases
+        if: ${{ inputs.create_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: openwrt/bin/targets/mediatek/filogic/*
+          fail_on_unmatched_files: true
+          make_latest: false
+
   build-self-hosted:
     name: 本地 Runner 编译
     if: inputs.runner_type == 'self-hosted'
@@ -165,3 +190,20 @@ jobs:
           name: immortalwrt-h5000m-${{ inputs.immortalwrt_ref }}
           path: |
             openwrt/bin/targets/mediatek/filogic/*
+
+      - name: 准备发布信息
+        if: ${{ inputs.create_release }}
+        run: |
+          safe_ref="$(printf '%s' '${{ inputs.immortalwrt_ref }}' | tr '/:@ ' '----')"
+          echo "RELEASE_TAG=immortalwrt-h5000m-${safe_ref}-${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=ImmortalWrt-H5000M ${{ inputs.immortalwrt_ref }} 第 ${{ github.run_number }} 次构建" >> "$GITHUB_ENV"
+
+      - name: 发布到 GitHub Releases
+        if: ${{ inputs.create_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: openwrt/bin/targets/mediatek/filogic/*
+          fail_on_unmatched_files: true
+          make_latest: false
