@@ -156,28 +156,14 @@ jobs:
 
       - name: 发布 Releases
         if: ${{ inputs.create_release }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          files=()
-          for file in openwrt/bin/targets/mediatek/filogic/*; do
-            [ -f "${file}" ] && files+=("${file}")
-          done
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "未找到可发布的固件文件。"
-            exit 1
-          fi
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" "${files[@]}" --clobber
-          else
-            gh release create "${RELEASE_TAG}" "${files[@]}" \
-              --title "${RELEASE_NAME}" \
-              --notes "openwrt-H5000M ${{ inputs.openwrt_ref }} build ${{ github.run_number }}" \
-              --target "${GITHUB_SHA}" \
-              --latest=false
-          fi
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          body: openwrt-H5000M ${{ inputs.openwrt_ref }} build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: false
+          files: openwrt/bin/targets/mediatek/filogic/*
 
   build-self-hosted:
     name: 本地 Runner 编译
@@ -298,25 +284,11 @@ jobs:
 
       - name: 发布 Releases
         if: ${{ inputs.create_release }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          files=()
-          for file in openwrt/bin/targets/mediatek/filogic/*; do
-            [ -f "${file}" ] && files+=("${file}")
-          done
-
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "未找到可发布的固件文件。"
-            exit 1
-          fi
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            gh release upload "${RELEASE_TAG}" "${files[@]}" --clobber
-          else
-            gh release create "${RELEASE_TAG}" "${files[@]}" \
-              --title "${RELEASE_NAME}" \
-              --notes "openwrt-H5000M ${{ inputs.openwrt_ref }} build ${{ github.run_number }}" \
-              --target "${GITHUB_SHA}" \
-              --latest=false
-          fi
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          body: openwrt-H5000M ${{ inputs.openwrt_ref }} build ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          make_latest: false
+          files: openwrt/bin/targets/mediatek/filogic/*
