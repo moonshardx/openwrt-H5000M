@@ -75,43 +75,23 @@ append_feed_once() {
   fi
 }
 
+need_small_package=false
+if [ "${INCLUDE_PASSWALL}" = "true" ] || \
+   [ "${INCLUDE_MOSDNS}" = "true" ] || \
+   [ "${INCLUDE_MOSDNS_LUCI}" = "true" ] || \
+   [ "${INCLUDE_HOMEPROXY}" = "true" ] || \
+   [ "${INCLUDE_SMALL_PACKAGE}" = "true" ]; then
+  need_small_package=true
+fi
+
 if [ "${INCLUDE_QMODEM}" = "true" ]; then
-  echo "添加 QModem 第三方 feed"
+  echo "添加 QModem 第三方 feed：FUjr/QModem"
   append_feed_once "src-git qmodem https://github.com/FUjr/QModem.git"
 fi
 
-if [ "${INCLUDE_PASSWALL}" = "true" ]; then
-  echo "添加 PassWall 第三方 feed"
-  append_feed_once "src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git"
-  append_feed_once "src-git passwall https://github.com/Openwrt-Passwall/openwrt-passwall.git"
-fi
-
-if [ "${INCLUDE_HOMEPROXY}" = "true" ]; then
-  echo "添加 HomeProxy 第三方 feed"
-  append_feed_once "src-git homeproxy https://github.com/VIKINGYFY/homeproxy.git"
-fi
-
-if [ "${INCLUDE_SMALL_PACKAGE}" = "true" ]; then
-  echo "添加 kenzok8 small-package 额外插件 feed"
+if [ "${need_small_package}" = "true" ]; then
+  echo "添加 kenzok8/small-package 插件 feed"
   append_feed_once "src-git small_package https://github.com/kenzok8/small-package.git"
-fi
-
-if [ "${INCLUDE_MOSDNS_LUCI}" = "true" ]; then
-  echo "添加第三方 MosDNS LuCI 页面，本体仍优先使用主源码 feeds 中的 mosdns"
-  MOSDNS_LUCI_CACHE="${ROOT_DIR}/build-cache/sbwml-luci-app-mosdns"
-  MOSDNS_LUCI_PACKAGE_DIR="${SRC_DIR}/package/h5000m-mosdns-luci"
-
-  if [ -d "${MOSDNS_LUCI_CACHE}/.git" ]; then
-    git -C "${MOSDNS_LUCI_CACHE}" fetch --depth=1 origin HEAD
-    git -C "${MOSDNS_LUCI_CACHE}" reset --hard FETCH_HEAD
-  else
-    git clone --depth=1 https://github.com/sbwml/luci-app-mosdns.git "${MOSDNS_LUCI_CACHE}"
-  fi
-
-  rm -rf "${MOSDNS_LUCI_PACKAGE_DIR}"
-  mkdir -p "${MOSDNS_LUCI_PACKAGE_DIR}"
-  cp -a "${MOSDNS_LUCI_CACHE}/luci-app-mosdns" "${MOSDNS_LUCI_PACKAGE_DIR}/luci-app-mosdns"
-  cp -a "${MOSDNS_LUCI_CACHE}/v2dat" "${MOSDNS_LUCI_PACKAGE_DIR}/v2dat"
 fi
 
 echo "写入默认 LAN IP、root 密码、WAN 优先级和软件源清理脚本"

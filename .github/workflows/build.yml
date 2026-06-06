@@ -33,32 +33,32 @@ on:
         type: boolean
         default: true
       passwall:
-        description: 集成 luci-app-passwall，OpenWrt 模式自动加入 PassWall 第三方 feed
+        description: 集成 luci-app-passwall，来源 kenzok8/small-package
         required: true
         type: boolean
         default: true
       mosdns:
-        description: 集成 mosdns 本体
+        description: 集成 mosdns 本体，来源 kenzok8/small-package
         required: true
         type: boolean
         default: true
       mosdns_luci:
-        description: 集成第三方 luci-app-mosdns 页面及所需依赖
+        description: 集成 luci-app-mosdns 页面及所需依赖，来源 kenzok8/small-package
         required: true
         type: boolean
         default: true
       upnp:
-        description: 集成 luci-app-upnp
+        description: 集成 luci-app-upnp，来源主源码官方 feeds
         required: true
         type: boolean
         default: true
       homeproxy:
-        description: 集成 luci-app-homeproxy，OpenWrt 模式自动加入 HomeProxy 第三方 feed
+        description: 集成 luci-app-homeproxy，来源 kenzok8/small-package
         required: true
         type: boolean
         default: false
       small_package:
-        description: 追加 kenzok8/small-package 额外插件库；默认关闭以减少包名冲突
+        description: 额外追加 kenzok8/small-package 插件库；勾选 PassWall、MosDNS 或 HomeProxy 时会自动添加
         required: true
         type: boolean
         default: false
