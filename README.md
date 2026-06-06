@@ -105,6 +105,13 @@ bash ./scripts/prepare-source.sh v24.10.6
 - 5G 模块优先：`USB`/`USBv6` 和 QModem modem-device metric 为 `10`，
   `wan`/`wan6` metric 为 `50`，并开启 `USBv6` 默认路由。
 
+固件内置 `luci-app-h5000m-fancontrol`，可在 LuCI 的“服务 / H5000M 风扇控制”
+中设置：
+
+- 自动：按温度在最低 PWM 与最高 PWM 之间线性调节。
+- 手动：固定指定 PWM。
+- 关闭：将 PWM 设为 `0`。
+
 ## 可选软件包
 
 workflow 可以选择集成 QModem、PassWall、MosDNS、UPnP 和 HomeProxy。

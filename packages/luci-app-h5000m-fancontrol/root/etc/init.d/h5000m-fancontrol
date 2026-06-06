@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+USE_PROCD=1
+
+start_service() {
+	local interval
+
+	interval="$(uci -q get h5000m_fancontrol.settings.interval || echo 15)"
+	[ "${interval}" -lt 5 ] && interval=5
+
+	procd_open_instance
+	procd_set_param command /bin/sh -c "while true; do /usr/sbin/h5000m-fancontrol apply >/dev/null 2>&1; sleep ${interval}; done"
+	procd_set_param respawn 3600 5 5
+	procd_close_instance
+}
+
+reload_service() {
+	stop
+	start
+}
