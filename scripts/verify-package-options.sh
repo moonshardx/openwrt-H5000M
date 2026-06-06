@@ -41,13 +41,12 @@ fi
 
 echo "检查 defconfig 后的最终勾选项"
 
-require_config "CONFIG_PACKAGE_luci"
-require_config "CONFIG_PACKAGE_luci-ssl"
+optional_config "CONFIG_PACKAGE_luci"
+optional_config "CONFIG_PACKAGE_luci-ssl"
 require_config "CONFIG_PACKAGE_luci-base"
 require_config "CONFIG_PACKAGE_rpcd-mod-luci"
 require_config "CONFIG_PACKAGE_uhttpd"
 optional_config "CONFIG_PACKAGE_luci-app-package-manager"
-optional_config "CONFIG_PACKAGE_luci-app-opkg"
 optional_config "CONFIG_PACKAGE_luci-i18n-base-zh-cn"
 optional_config "CONFIG_PACKAGE_luci-i18n-firewall-zh-cn"
 optional_config "CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn"

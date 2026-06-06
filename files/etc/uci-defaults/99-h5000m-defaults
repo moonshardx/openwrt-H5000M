@@ -39,13 +39,9 @@ for section in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-ifac
 done
 uci -q commit wireless
 
-logger -t h5000m-defaults "清理固件内的 QModem 和 video 软件源"
+logger -t h5000m-defaults "清理固件内的 QModem 和 video apk 软件源"
 if [ -f /etc/apk/repositories.d/distfeeds.list ]; then
 	sed -i '/\/qmodem\//d;/ qmodem[ _-]/d;/ qmodem$/d;/\/video\//d' /etc/apk/repositories.d/distfeeds.list
-fi
-
-if [ -f /etc/opkg/distfeeds.conf ]; then
-	sed -i '/\/qmodem\//d;/ qmodem[ _-]/d;/ qmodem$/d;/\/video\//d' /etc/opkg/distfeeds.conf
 fi
 
 exit 0
