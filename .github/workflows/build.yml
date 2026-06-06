@@ -227,8 +227,12 @@ jobs:
       - name: 生成最终配置
         working-directory: openwrt
         run: |
+          {
+            echo "CONFIG_CCACHE=y"
+            echo "CONFIG_CCACHE_DIR=\"${CCACHE_DIR}\""
+          } >> .config
           make defconfig
-          grep -E '^CONFIG_CCACHE=y|^CONFIG_TARGET_' .config | sed -n '1,40p'
+          grep -E '^CONFIG_CCACHE=y|^CONFIG_CCACHE_DIR=|^CONFIG_DOWNLOAD_FOLDER=|^CONFIG_TARGET_' .config | sed -n '1,80p'
 
       - name: 检查勾选的软件包
         env:
@@ -243,22 +247,22 @@ jobs:
       - name: 下载源码包
         working-directory: openwrt
         run: |
-          make download -j"$(nproc)"
+          make DL_DIR="${DL_DIR}" download -j"$(nproc)"
           du -sh "${DL_DIR}" 2>/dev/null || true
 
       - name: 编译固件
         working-directory: openwrt
         run: |
           if [ -n "${{ inputs.make_jobs }}" ]; then
-            make -j"${{ inputs.make_jobs }}"
+            make DL_DIR="${DL_DIR}" -j"${{ inputs.make_jobs }}"
           else
-            make -j"$(nproc)"
+            make DL_DIR="${DL_DIR}" -j"$(nproc)"
           fi
 
       - name: 输出失败详情
         if: ${{ failure() }}
         working-directory: openwrt
-        run: make -j1 V=s
+        run: make DL_DIR="${DL_DIR}" -j1 V=s
 
       - name: 输出本地缓存统计
         if: ${{ always() }}
