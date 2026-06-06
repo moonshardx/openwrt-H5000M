@@ -9,13 +9,13 @@ patch_tcping() {
 
   [ -f "${makefile}" ] || return 0
 
-  if grep -q 'STRIP="$(TARGET_STRIP)"' "${makefile}"; then
+  if grep -q 'STRIP=true' "${makefile}"; then
     echo "tcping feed patch already applied."
     return 0
   fi
 
-  sed -i 's|LDFLAGS="$(TARGET_LDFLAGS)"|LDFLAGS="$(TARGET_LDFLAGS)" STRIP="$(TARGET_STRIP)"|' "${makefile}"
-  echo "Patched tcping feed package to use the target strip tool."
+  sed -i 's|LDFLAGS="$(TARGET_LDFLAGS)"|LDFLAGS="$(TARGET_LDFLAGS)" STRIP=true|' "${makefile}"
+  echo "Patched tcping feed package to skip upstream strip."
 }
 
 patch_tcping

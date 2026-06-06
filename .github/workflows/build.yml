@@ -96,9 +96,15 @@ jobs:
 
       - name: 更新软件源
         working-directory: openwrt
+        env:
+          INCLUDE_QMODEM: ${{ inputs.qmodem && 'true' || 'false' }}
+          INCLUDE_PASSWALL: ${{ inputs.passwall && 'true' || 'false' }}
+          INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
+          INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
         run: |
           ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          cd ..
+          bash ./scripts/install-feeds.sh
 
       - name: 修复第三方 feed
         run: bash ./scripts/patch-feeds.sh
@@ -213,9 +219,15 @@ jobs:
 
       - name: 更新软件源
         working-directory: openwrt
+        env:
+          INCLUDE_QMODEM: ${{ inputs.qmodem && 'true' || 'false' }}
+          INCLUDE_PASSWALL: ${{ inputs.passwall && 'true' || 'false' }}
+          INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
+          INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
         run: |
           ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          cd ..
+          bash ./scripts/install-feeds.sh
 
       - name: 修复第三方 feed
         run: bash ./scripts/patch-feeds.sh
