@@ -92,7 +92,8 @@ bash ./scripts/prepare-source.sh v24.10.6
 - WiFi 名称：保留默认 `ImmortalWrt`
 - WiFi 密码：`1234567890`
 - WAN 网线优先：`wan`/`wan6` metric 为 `10`
-- 5G SIM 备用：保留 QModem 生成的 `USB`/`USBv6`，metric 为 `50`
+- 5G SIM 备用：保留 QModem 生成的 `USB`/`USBv6`，并将 QModem
+  modem-device 与网络接口 metric 设为 `50`
 - 接口热插拔时自动清理旧的 `wan5g`/`wan5g6` 残留，避免重复接口
 - 首次启动时删除固件内的 QModem 和 video 软件源条目。
 
