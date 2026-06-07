@@ -363,6 +363,9 @@ return view.extend({
 
 		var canvasId = 'h5000m-fan-curve-canvas';
 		var self = this;
+		var legendItems = [
+			E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#45b77d' }), _('自动曲线') ])
+		];
 		var canvasConfig = {
 			mode: mode,
 			low: low,
@@ -387,6 +390,12 @@ return view.extend({
 			window.h5000mFanCurveDraw();
 		}, 0);
 
+		if (mode === 'manual')
+			legendItems.push(E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#79b8ff' }), _('手动 PWM') ]));
+
+		if (!isNaN(currentTemp))
+			legendItems.push(E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#ff5d5d' }), _('当前状态') ]));
+
 		return E('div', { 'class': 'h5000m-fan-curve' }, [
 			E('h3', _('风扇曲线')),
 			E('div', { 'class': 'h5000m-fan-curve-box' }, [
@@ -407,11 +416,7 @@ return view.extend({
 						])
 					])
 				]),
-				E('div', { 'class': 'h5000m-fan-legend' }, [
-					E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#45b77d' }), _('自动曲线') ]),
-					mode === 'manual' ? E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#79b8ff' }), _('手动 PWM') ]) : null,
-					marker ? E('span', [ E('span', { 'class': 'h5000m-fan-swatch', style: 'background:#ff5d5d' }), _('当前状态') ]) : null
-				]),
+				E('div', { 'class': 'h5000m-fan-legend' }, legendItems),
 				E('div', { 'class': 'h5000m-fan-note' }, modeText)
 			])
 		]);
