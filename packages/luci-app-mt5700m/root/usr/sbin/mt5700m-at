@@ -2,10 +2,17 @@
 
 CONFIG='mt5700m.settings'
 
-enabled="$(uci -q get ${CONFIG}.enabled || echo 1)"
-host="$(uci -q get ${CONFIG}.host || echo 192.168.8.1)"
-port="$(uci -q get ${CONFIG}.port || echo 20249)"
-timeout_s="$(uci -q get ${CONFIG}.timeout || echo 8)"
+if command -v uci >/dev/null 2>&1; then
+	enabled="$(uci -q get ${CONFIG}.enabled || echo 1)"
+	host="$(uci -q get ${CONFIG}.host || echo 192.168.8.1)"
+	port="$(uci -q get ${CONFIG}.port || echo 20249)"
+	timeout_s="$(uci -q get ${CONFIG}.timeout || echo 8)"
+else
+	enabled=1
+	host=192.168.8.1
+	port=20249
+	timeout_s=8
+fi
 
 case "${timeout_s}" in
 	''|*[!0-9]*)
@@ -29,12 +36,139 @@ at_cmd() {
 	return 127
 }
 
+at_sms_send() {
+	local number="$1"
+	local text="$2"
+
+	[ "${enabled}" = "1" ] || return 2
+	number="$(printf '%s' "${number}" | tr -cd '0-9+')"
+	text="$(printf '%s' "${text}" | tr -d '\000')"
+	[ -n "${number}" ] && [ -n "${text}" ] || return 1
+
+	if command -v nc >/dev/null 2>&1; then
+		{
+			printf 'AT+CMGF=1\r'
+			sleep 1
+			printf 'AT+CMGS="%s"\r' "${number}"
+			sleep 1
+			printf '%s\032' "${text}"
+		} | nc -w "$((timeout_s + 20))" "${host}" "${port}" 2>/dev/null
+		return $?
+	fi
+
+	echo "nc command not found" >&2
+	return 127
+}
+
 first_match() {
 	sed -n "$1" | head -n 1 | tr -d '\r'
 }
 
 clean_value() {
 	sed "s/^[[:space:]]*//;s/[[:space:]]*$//;s/^\"//;s/\"$//"
+}
+
+csv_count() {
+	local value="$1"
+
+	value="$(printf '%s' "${value}" | tr -d ' ')"
+	[ -n "${value}" ] || {
+		echo 0
+		return
+	}
+
+	awk -F, '{ print NF }' <<EOF
+${value}
+EOF
+}
+
+clean_csv() {
+	printf '%s' "$1" | tr -d ' ' | sed 's/^,*//;s/,*$//;s/,,*/,/g'
+}
+
+build_lte_lock_command() {
+	local lock_type bands arfcns pcis count
+
+	lock_type="${1:-0}"
+	bands="$(clean_csv "${2:-}")"
+	arfcns="$(clean_csv "${3:-}")"
+	pcis="$(clean_csv "${4:-}")"
+
+	case "${lock_type}" in
+		0)
+			printf '%s\n' 'AT^LTEFREQLOCK=0'
+			;;
+		3)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] || {
+				printf '%s\n' 'AT^LTEFREQLOCK=0'
+				return
+			}
+			printf 'AT^LTEFREQLOCK=3,0,%s,"%s"\n' "${count}" "${bands}"
+			;;
+		1)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] && [ "${count}" = "$(csv_count "${arfcns}")" ] || {
+				printf '%s\n' 'AT^LTEFREQLOCK=0'
+				return
+			}
+			printf 'AT^LTEFREQLOCK=1,0,%s,"%s","%s"\n' "${count}" "${bands}" "${arfcns}"
+			;;
+		2)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] && [ "${count}" = "$(csv_count "${arfcns}")" ] && [ "${count}" = "$(csv_count "${pcis}")" ] || {
+				printf '%s\n' 'AT^LTEFREQLOCK=0'
+				return
+			}
+			printf 'AT^LTEFREQLOCK=2,0,%s,"%s","%s","%s"\n' "${count}" "${bands}" "${arfcns}" "${pcis}"
+			;;
+		*)
+			printf '%s\n' 'AT^LTEFREQLOCK=0'
+			;;
+	esac
+}
+
+build_nr_lock_command() {
+	local lock_type bands arfcns scs pcis count
+
+	lock_type="${1:-0}"
+	bands="$(clean_csv "${2:-}")"
+	arfcns="$(clean_csv "${3:-}")"
+	scs="$(clean_csv "${4:-}")"
+	pcis="$(clean_csv "${5:-}")"
+
+	case "${lock_type}" in
+		0)
+			printf '%s\n' 'AT^NRFREQLOCK=0'
+			;;
+		3)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] || {
+				printf '%s\n' 'AT^NRFREQLOCK=0'
+				return
+			}
+			printf 'AT^NRFREQLOCK=3,0,%s,"%s"\n' "${count}" "${bands}"
+			;;
+		1)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] && [ "${count}" = "$(csv_count "${arfcns}")" ] && [ "${count}" = "$(csv_count "${scs}")" ] || {
+				printf '%s\n' 'AT^NRFREQLOCK=0'
+				return
+			}
+			printf 'AT^NRFREQLOCK=1,0,%s,"%s","%s","%s"\n' "${count}" "${bands}" "${arfcns}" "${scs}"
+			;;
+		2)
+			count="$(csv_count "${bands}")"
+			[ "${count}" -gt 0 ] && [ "${count}" = "$(csv_count "${arfcns}")" ] && [ "${count}" = "$(csv_count "${scs}")" ] && [ "${count}" = "$(csv_count "${pcis}")" ] || {
+				printf '%s\n' 'AT^NRFREQLOCK=0'
+				return
+			}
+			printf 'AT^NRFREQLOCK=2,0,%s,"%s","%s","%s","%s"\n' "${count}" "${bands}" "${arfcns}" "${scs}" "${pcis}"
+			;;
+		*)
+			printf '%s\n' 'AT^NRFREQLOCK=0'
+			;;
+	esac
 }
 
 print_signal() {
@@ -124,6 +258,58 @@ print_lock_status() {
 	printf '%s\n' "${raw}" | first_match 's/^\^LTEFREQLOCK:[[:space:]]*//p' | clean_value | sed 's/^/lte_lock=/'
 }
 
+print_network_info() {
+	local label command raw
+
+	for item in \
+		"Signal|AT^HCSQ?" \
+		"Serving cell|AT^MONSC" \
+		"Frequency info|AT^HFREQINFO?" \
+		"Network registration|AT+CEREG?" \
+		"Operator|AT+COPS?" \
+		"LTE lock|AT^LTEFREQLOCK?" \
+		"NR lock|AT^NRFREQLOCK?"
+	do
+		label="${item%%|*}"
+		command="${item#*|}"
+		echo "===== ${label}: ${command} ====="
+		raw="$(at_cmd "${command}" || true)"
+		printf '%s\n\n' "${raw}"
+	done
+}
+
+print_sms_list() {
+	echo "===== SMS storage ====="
+	at_cmd 'AT+CPMS?' || true
+	echo
+	echo "===== SMS messages ====="
+	at_cmd 'AT+CMGF=1' >/dev/null 2>&1 || true
+	at_cmd 'AT+CMGL="ALL"' || true
+}
+
+print_system_info() {
+	local label command raw
+
+	for item in \
+		"Identity|ATI" \
+		"IMEI|AT+CGSN" \
+		"Revision|AT+CGMR" \
+		"Version|AT^VERSION?" \
+		"SIM|AT+CPIN?" \
+		"Operator|AT+COPS?" \
+		"FOTA mode|AT^FOTAMODE?" \
+		"FOTA state|AT^FOTASTATE?" \
+		"FOTA progress|AT^FOTADLQ" \
+		"Temperature|AT^CHIPTEMP?"
+	do
+		label="${item%%|*}"
+		command="${item#*|}"
+		echo "===== ${label}: ${command} ====="
+		raw="$(at_cmd "${command}" || true)"
+		printf '%s\n\n' "${raw}"
+	done
+}
+
 case "${1:-status}" in
 	status)
 		echo "enabled=${enabled}"
@@ -143,6 +329,83 @@ case "${1:-status}" in
 	command)
 		shift
 		at_cmd "$*"
+		;;
+	network)
+		print_network_info
+		;;
+	cellscan)
+		at_cmd 'AT^CELLSCAN=3'
+		;;
+	sms-list)
+		print_sms_list
+		;;
+	sms-send)
+		shift
+		at_sms_send "${1:-}" "${2:-}"
+		;;
+	sms-delete)
+		shift
+		index="$(printf '%s' "${1:-}" | tr -cd '0-9')"
+		[ -n "${index}" ] || exit 1
+		at_cmd "AT+CMGD=${index}"
+		;;
+	system)
+		print_system_info
+		;;
+	fota-init)
+		at_cmd 'AT^FOTAMODE=0,1,0,1'
+		;;
+	fota-state)
+		at_cmd 'AT^FOTASTATE?'
+		;;
+	fota-progress)
+		at_cmd 'AT^FOTADLQ'
+		;;
+	fota-download)
+		shift
+		url="$(printf '%s' "${1:-}" | tr -d '\000\r\n"')"
+		[ -n "${url}" ] || exit 1
+		at_cmd "AT^FOTAOEMDL=\"${url}\""
+		;;
+	fota-resume)
+		at_cmd 'AT^FOTADL=1'
+		;;
+	fota-upgrade)
+		at_cmd 'AT^FWUP'
+		;;
+	preview-lock)
+		shift
+		case "${1:-}" in
+			lte)
+				shift
+				build_lte_lock_command "$@"
+				;;
+			nr)
+				shift
+				build_nr_lock_command "$@"
+				;;
+			*)
+				echo "Usage: $0 preview-lock {lte|nr} <type> <bands> [arfcns] [scs] [pcis]" >&2
+				exit 1
+				;;
+		esac
+		;;
+	lock)
+		shift
+		case "${1:-}" in
+			lte)
+				shift
+				at_cmd "$(build_lte_lock_command "$@")"
+				;;
+			nr)
+				shift
+				at_cmd "$(build_nr_lock_command "$@")"
+				;;
+			*)
+				echo "Usage: $0 lock {lte|nr} <type> <bands> [arfcns] [scs] [pcis]" >&2
+				exit 1
+				;;
+		esac
 		;;
 	restart)
 		at_cmd 'AT+CFUN=1,1'
