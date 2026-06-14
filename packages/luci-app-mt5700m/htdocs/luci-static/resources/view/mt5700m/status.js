@@ -83,7 +83,9 @@ return view.extend({
 	render: function(res) {
 		var data = this.parseStatus(res);
 		var connected = data.connected === '1' ? _('Connected') : _('Disconnected');
-		var connectedHint = '%s:%s'.format(data.host || '192.168.8.1', data.port || '20249');
+		var connectedHint = data.channel === 'serial'
+			? '%s %s'.format(_('Serial'), data.at_port || '')
+			: '%s:%s'.format(data.host || '192.168.8.1', data.port || '20249');
 		var signal = [];
 
 		if (data.rsrp)

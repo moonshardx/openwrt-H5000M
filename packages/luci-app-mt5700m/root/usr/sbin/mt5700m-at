@@ -4,11 +4,15 @@ CONFIG='mt5700m.settings'
 
 if command -v uci >/dev/null 2>&1; then
 	enabled="$(uci -q get ${CONFIG}.enabled || echo 1)"
+	mode="$(uci -q get ${CONFIG}.mode || echo auto)"
+	at_port="$(uci -q get ${CONFIG}.at_port || echo '')"
 	host="$(uci -q get ${CONFIG}.host || echo 192.168.8.1)"
 	port="$(uci -q get ${CONFIG}.port || echo 20249)"
 	timeout_s="$(uci -q get ${CONFIG}.timeout || echo 8)"
 else
 	enabled=1
+	mode=auto
+	at_port=
 	host=192.168.8.1
 	port=20249
 	timeout_s=8
@@ -20,15 +24,47 @@ case "${timeout_s}" in
 		;;
 esac
 
-at_cmd() {
+case "${mode}" in
+	auto|serial|network)
+		;;
+	*)
+		mode=auto
+		;;
+esac
+
+run_with_timeout() {
+	local seconds="$1"
+	shift
+
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "${seconds}" "$@"
+	else
+		"$@"
+	fi
+}
+
+detect_qmodem_at_port() {
+	local candidate
+
+	[ -n "${at_port}" ] && [ -e "${at_port}" ] && {
+		printf '%s\n' "${at_port}"
+		return 0
+	}
+
+	command -v uci >/dev/null 2>&1 || return 1
+
+	uci -q show qmodem 2>/dev/null | sed -n "s/.*\.at_port='\([^']*\)'.*/\1/p;s/.*\.at_port=\([^ ]*\).*/\1/p" | while read -r candidate; do
+		[ -e "${candidate}" ] || continue
+		printf '%s\n' "${candidate}"
+		break
+	done
+}
+
+at_network_cmd() {
 	local command="$1"
 
-	[ "${enabled}" = "1" ] || return 2
-	command="$(printf '%s' "${command}" | tr -d '\000\r\n')"
-	[ -n "${command}" ] || return 1
-
 	if command -v nc >/dev/null 2>&1; then
-		printf '%s\r' "${command}" | nc -w "${timeout_s}" "${host}" "${port}" 2>/dev/null
+		printf '%s\r' "${command}" | run_with_timeout "${timeout_s}" nc "${host}" "${port}" 2>/dev/null
 		return $?
 	fi
 
@@ -36,14 +72,109 @@ at_cmd() {
 	return 127
 }
 
+at_serial_cmd() {
+	local command="$1"
+	local device="$2"
+
+	[ -e "${device}" ] || return 1
+
+	if command -v stty >/dev/null 2>&1; then
+		stty -F "${device}" 115200 raw -echo -echoe -echok -echoctl -echoke -ixon -ixoff min 0 time 5 2>/dev/null || true
+	fi
+
+	(
+		sleep 0.1
+		printf '%s\r' "${command}" > "${device}"
+	) &
+
+	run_with_timeout "${timeout_s}" cat "${device}" 2>/dev/null | awk '
+		{
+			gsub(/\r/, "")
+			print
+		}
+		/^OK$/ || /^ERROR$/ || /^\+CME ERROR/ || /^\+CMS ERROR/ {
+			exit
+		}
+	'
+}
+
+at_cmd() {
+	local command="$1"
+	local device
+
+	[ "${enabled}" = "1" ] || return 2
+	command="$(printf '%s' "${command}" | tr -d '\000\r\n')"
+	[ -n "${command}" ] || return 1
+
+	case "${mode}" in
+		serial)
+			device="$(detect_qmodem_at_port)"
+			[ -n "${device}" ] || {
+				echo "AT serial port not found" >&2
+				return 1
+			}
+			at_serial_cmd "${command}" "${device}"
+			return $?
+			;;
+		network)
+			at_network_cmd "${command}"
+			return $?
+			;;
+		auto)
+			device="$(detect_qmodem_at_port)"
+			if [ -n "${device}" ]; then
+				at_serial_cmd "${command}" "${device}"
+				return $?
+			fi
+
+			at_network_cmd "${command}"
+			return $?
+			;;
+	esac
+}
+
 at_sms_send() {
 	local number="$1"
 	local text="$2"
+	local device
 
 	[ "${enabled}" = "1" ] || return 2
 	number="$(printf '%s' "${number}" | tr -cd '0-9+')"
 	text="$(printf '%s' "${text}" | tr -d '\000')"
 	[ -n "${number}" ] && [ -n "${text}" ] || return 1
+
+	case "${mode}" in
+		serial|auto)
+			device="$(detect_qmodem_at_port)"
+			if [ -n "${device}" ]; then
+				if command -v stty >/dev/null 2>&1; then
+					stty -F "${device}" 115200 raw -echo -echoe -echok -echoctl -echoke -ixon -ixoff min 0 time 5 2>/dev/null || true
+				fi
+				(
+					sleep 0.1
+					printf 'AT+CMGF=1\r' > "${device}"
+					sleep 1
+					printf 'AT+CMGS="%s"\r' "${number}" > "${device}"
+					sleep 1
+					printf '%s\032' "${text}" > "${device}"
+				) &
+				run_with_timeout "$((timeout_s + 20))" cat "${device}" 2>/dev/null | awk '
+					{
+						gsub(/\r/, "")
+						print
+					}
+					/^OK$/ || /^ERROR$/ || /^\+CME ERROR/ || /^\+CMS ERROR/ {
+						exit
+					}
+				'
+				return $?
+			fi
+			[ "${mode}" = "serial" ] && {
+				echo "AT serial port not found" >&2
+				return 1
+			}
+			;;
+	esac
 
 	if command -v nc >/dev/null 2>&1; then
 		{
@@ -52,7 +183,7 @@ at_sms_send() {
 			printf 'AT+CMGS="%s"\r' "${number}"
 			sleep 1
 			printf '%s\032' "${text}"
-		} | nc -w "$((timeout_s + 20))" "${host}" "${port}" 2>/dev/null
+		} | run_with_timeout "$((timeout_s + 20))" nc "${host}" "${port}" 2>/dev/null
 		return $?
 	fi
 
@@ -313,8 +444,16 @@ print_system_info() {
 case "${1:-status}" in
 	status)
 		echo "enabled=${enabled}"
+		echo "mode=${mode}"
+		detected_at_port="$(detect_qmodem_at_port || true)"
+		echo "at_port=${detected_at_port:-${at_port}}"
 		echo "host=${host}"
 		echo "port=${port}"
+		if [ "${mode}" = "network" ] || { [ "${mode}" = "auto" ] && [ -z "${detected_at_port}" ]; }; then
+			echo "channel=network"
+		else
+			echo "channel=serial"
+		fi
 		if at_cmd 'AT' | grep -q 'OK'; then
 			echo "connected=1"
 		else
