@@ -5,7 +5,7 @@ PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
 LUCI_TITLE:=MT5700M modem management
-LUCI_DEPENDS:=+luci-base +busybox
+LUCI_DEPENDS:=+luci-base +busybox +at-webserver
 LUCI_PKGARCH:=all
 
 include $(TOPDIR)/feeds/luci/luci.mk

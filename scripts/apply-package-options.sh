@@ -51,6 +51,7 @@ if [ "${INCLUDE_MT5700M}" = "true" ]; then
   append_config <<'EOF'
 CONFIG_PACKAGE_luci-app-mt5700m=y
 CONFIG_PACKAGE_luci-i18n-mt5700m-zh-cn=y
+CONFIG_PACKAGE_at-webserver=y
 EOF
 fi
 

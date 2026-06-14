@@ -279,3 +279,12 @@ msgstr "AT 串口"
 
 msgid "Serial"
 msgstr "串口"
+
+msgid "MT5700M Native WebUI"
+msgstr "MT5700M 原生界面"
+
+msgid "Native WebUI"
+msgstr "原生界面"
+
+msgid "Open in new tab"
+msgstr "新标签打开"
