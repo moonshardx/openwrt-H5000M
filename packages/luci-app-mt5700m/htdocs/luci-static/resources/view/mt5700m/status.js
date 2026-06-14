@@ -37,6 +37,9 @@ return view.extend({
 	},
 
 	card: function(title, value, hint) {
+		value = (value === 'null') ? '' : value;
+		hint = (hint === 'null') ? '' : hint;
+
 		return E('div', { 'class': 'mt5700m-card' }, [
 			E('div', { 'class': 'mt5700m-card-title' }, title),
 			E('div', { 'class': 'mt5700m-card-value' }, value || _('Unknown')),
@@ -104,7 +107,7 @@ return view.extend({
 				this.card(_('Module'), data.model || data.manufacturer, data.revision || ''),
 				this.card(_('SIM Status'), data.sim, data.imei ? 'IMEI ' + data.imei : ''),
 				this.card(_('Operator'), data.operator, ''),
-				this.card(_('Network Mode'), data.sysmode, signal.join(' / ')),
+				this.card(_('Network Mode'), data.sysmode_detail || data.sysmode, signal.join(' / ')),
 				this.card(_('Module Temperature'), data.temperature ? _('%s C').format(data.temperature) : '', 'AT^CHIPTEMP?'),
 				this.card(_('NR Lock'), data.nr_lock || _('Unknown'), 'AT^NRFREQLOCK?'),
 				this.card(_('LTE Lock'), data.lte_lock || _('Unknown'), 'AT^LTEFREQLOCK?')

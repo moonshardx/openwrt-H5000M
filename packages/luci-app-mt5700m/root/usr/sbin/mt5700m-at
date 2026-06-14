@@ -199,6 +199,81 @@ clean_value() {
 	sed "s/^[[:space:]]*//;s/[[:space:]]*$//;s/^\"//;s/\"$//"
 }
 
+clean_line_value() {
+	printf '%s' "$1" | sed "s/^[[:space:]]*//;s/[[:space:]]*$//;s/^\"//;s/\"$//"
+}
+
+extract_cops_operator() {
+	local raw line name
+
+	raw="$1"
+	line="$(printf '%s\n' "${raw}" | first_match 's/^+COPS:[[:space:]]*//p')"
+	line="$(printf '%s' "${line}" | tr -d '\r')"
+	[ -n "${line}" ] || return 1
+
+	name="$(printf '%s' "${line}" | awk -F\" 'NF >= 2 { print $2; exit }')"
+	if [ -n "${name}" ]; then
+		clean_line_value "${name}"
+		return 0
+	fi
+
+	name="$(printf '%s' "${line}" | awk -F, '{ print $3 }')"
+	name="$(clean_line_value "${name}")"
+	[ -n "${name}" ] && {
+		printf '%s\n' "${name}"
+		return 0
+	}
+
+	clean_line_value "${line}"
+}
+
+normalize_rat() {
+	case "$1" in
+		0) echo "GSM" ;;
+		2) echo "UTRAN" ;;
+		3) echo "GSM EDGE" ;;
+		4) echo "HSDPA" ;;
+		5) echo "HSUPA" ;;
+		6) echo "HSDPA/HSUPA" ;;
+		7) echo "LTE" ;;
+		9) echo "NR" ;;
+		10) echo "LTE-M" ;;
+		11) echo "NB-IoT" ;;
+		13) echo "LTE" ;;
+		20) echo "NR" ;;
+		*) clean_line_value "$1" ;;
+	esac
+}
+
+extract_cops_rat() {
+	local raw line rat
+
+	raw="$1"
+	line="$(printf '%s\n' "${raw}" | first_match 's/^+COPS:[[:space:]]*//p')"
+	line="$(printf '%s' "${line}" | tr -d ' "\r')"
+	[ -n "${line}" ] || return 1
+	rat="$(printf '%s' "${line}" | awk -F, '{ print $4 }')"
+	[ -n "${rat}" ] || return 1
+	normalize_rat "${rat}"
+}
+
+extract_sysinfo_mode() {
+	local raw line mode
+
+	raw="$1"
+	line="$(printf '%s\n' "${raw}" | first_match 's/^\^SYSINFOEX:[[:space:]]*//p')"
+	line="$(printf '%s' "${line}" | tr -d '\r')"
+	[ -n "${line}" ] || return 1
+
+	mode="$(printf '%s' "${line}" | awk -F\" 'NF >= 2 { print $2; exit }')"
+	if [ -n "${mode}" ]; then
+		clean_line_value "${mode}"
+		return 0
+	fi
+
+	clean_line_value "${line}"
+}
+
 csv_count() {
 	local value="$1"
 
@@ -318,7 +393,7 @@ print_signal() {
 	sinr="$3"
 	rsrq="$4"
 
-	echo "sysmode=${sys:-}"
+	[ -n "${sys}" ] && echo "sysmode=${sys}"
 	if printf '%s' "${rsrp:-}" | grep -Eq '^[0-9]+$'; then
 		[ "${rsrp}" = "255" ] && echo "rsrp=" || echo "rsrp=$((rsrp - 140))"
 	fi
@@ -361,13 +436,20 @@ print_identity() {
 }
 
 print_sim_operator() {
-	local sim cops
+	local sim cops operator rat sysinfo sysmode
 
 	sim="$(at_cmd 'AT+CPIN?' || true)"
 	printf '%s\n' "${sim}" | first_match 's/^+CPIN:[[:space:]]*//p' | clean_value | sed 's/^/sim=/'
 
 	cops="$(at_cmd 'AT+COPS?' || true)"
-	printf '%s\n' "${cops}" | first_match 's/^+COPS:[[:space:]]*//p' | clean_value | sed 's/^/operator=/'
+	operator="$(extract_cops_operator "${cops}" || true)"
+	[ -n "${operator}" ] && echo "operator=${operator}"
+	rat="$(extract_cops_rat "${cops}" || true)"
+	[ -n "${rat}" ] && echo "sysmode=${rat}"
+
+	sysinfo="$(at_cmd 'AT^SYSINFOEX' || true)"
+	sysmode="$(extract_sysinfo_mode "${sysinfo}" || true)"
+	[ -n "${sysmode}" ] && echo "sysmode_detail=${sysmode}"
 }
 
 print_temperature() {
