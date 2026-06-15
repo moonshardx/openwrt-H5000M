@@ -184,7 +184,6 @@ jobs:
             echo "# CONFIG_GDB is not set"
             echo "# CONFIG_GDB_PYTHON is not set"
           } >> .config
-          make defconfig
           grep -E '^(CONFIG_DEVEL|CONFIG_TOOLCHAINOPTS|CONFIG_CCACHE|CONFIG_GDB|CONFIG_GDB_PYTHON)=|^# CONFIG_(DEVEL|TOOLCHAINOPTS|CCACHE|GDB)' .config || true
 
       - name: 检查插件
