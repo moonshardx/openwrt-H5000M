@@ -130,7 +130,6 @@ fi
 for radio in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-device$/\1/p'); do
 	band="$(uci -q get "${radio}.band")"
 	uci -q set "${radio}.country=US"
-	uci -q set "${radio}.channel=auto"
 	case "${band}" in
 		2g)
 			uci -q set "${radio}.disabled=1"
