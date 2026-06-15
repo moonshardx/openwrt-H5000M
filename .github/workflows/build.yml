@@ -237,6 +237,8 @@ jobs:
               echo "::endgroup::"
             done
           fi
+          echo "执行单线程 package/install 以输出 rootfs 安装失败点。"
+          timeout 15m make package/install V=s || true
           echo "执行单线程详细编译以输出真实失败点。"
           timeout 45m make -j1 V=s || true
 

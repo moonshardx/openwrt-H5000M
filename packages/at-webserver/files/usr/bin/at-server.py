@@ -2,7 +2,10 @@ import asyncio
 import socket
 import time
 import re
-import aiohttp
+try:
+    import aiohttp
+except ImportError:
+    aiohttp = None
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional
@@ -503,6 +506,8 @@ class WeChatNotification(NotificationChannel):
     def __init__(self, webhook_url: str):
         if not webhook_url:
             raise ValueError("webhook URL 不能为空")
+        if aiohttp is None:
+            raise RuntimeError("aiohttp is not installed; WeChat webhook notifications are unavailable")
         self.webhook_url = webhook_url
         self.max_retries = 3
         self.retry_delay = 1

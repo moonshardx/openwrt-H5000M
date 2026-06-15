@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=at-webserver
 PKG_VERSION:=1.0
-PKG_RELEASE:=15
+PKG_RELEASE:=16
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -12,7 +12,7 @@ define Package/at-webserver
   SECTION:=net
   CATEGORY:=Network
   TITLE:=AT Command WebSocket Server
-  DEPENDS:=+python3 +python3-asyncio +python3-websockets +python3-pyserial +python3-aiohttp
+  DEPENDS:=+python3 +python3-asyncio +python3-websockets +python3-pyserial
   PKGARCH:=all
 endef
 
