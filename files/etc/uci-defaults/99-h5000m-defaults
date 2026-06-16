@@ -134,6 +134,7 @@ for radio in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-device
 		2g)
 			uci -q set "${radio}.disabled=0"
 			uci -q set "${radio}.htmode=EHT40"
+			uci -q set "${radio}.txpower=10"
 			;;
 		5g)
 			uci -q set "${radio}.disabled=0"
@@ -154,7 +155,6 @@ for section in $(uci -q show wireless | sed -n 's/^\(wireless\.[^.]*\)=wifi-ifac
 	uci -q set "${section}.key=1234567890"
 	uci -q set "${section}.ieee80211w=1"
 	uci -q set "${section}.ieee80211k=1"
-	uci -q set "${section}.bss_transition=1"
 	uci -q set "${section}.rrm_neighbor_report=1"
 	uci -q set "${section}.rrm_beacon_report=1"
 	case "${band}" in
@@ -187,14 +187,17 @@ if [ -f /etc/config/usteer ]; then
 	uci -q set usteer.@usteer[0].local_mode='1'
 	uci -q set usteer.@usteer[0].assoc_steering='1'
 	uci -q set usteer.@usteer[0].probe_steering='1'
+	uci -q set usteer.@usteer[0].band_steering_threshold='0'
 	uci -q set usteer.@usteer[0].band_steering_interval='30000'
 	uci -q set usteer.@usteer[0].band_steering_min_snr='-60'
+	uci -q set usteer.@usteer[0].band_steering_signal_threshold='3'
 	uci -q set usteer.@usteer[0].signal_diff_threshold='8'
 	uci -q set usteer.@usteer[0].link_measurement_interval='30000'
 	uci -q delete usteer.@usteer[0].ssid_list
 	uci -q add_list usteer.@usteer[0].ssid_list='H5000M'
 	uci -q commit usteer
 	/etc/init.d/usteer enable >/dev/null 2>&1 || true
+	/etc/init.d/usteer restart >/dev/null 2>&1 || true
 fi
 
 logger -t h5000m-defaults "Remove build-only apk feed entries"
