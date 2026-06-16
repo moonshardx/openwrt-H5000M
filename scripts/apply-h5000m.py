@@ -87,8 +87,6 @@ DTS = r'''// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 };
 
 &fan {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_fan_pins>;
 	pwms = <&pwm 1 50000 0>;
 	status = "okay";
 };
@@ -202,6 +200,8 @@ DTS = r'''// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 &pwm {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_fan_pins>;
 };
 
 &ssusb {

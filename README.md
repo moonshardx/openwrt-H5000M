@@ -14,8 +14,36 @@ https://github.com/openwrt/openwrt/pull/21398
 - 结合官方固件和实机日志，H5000M 当前使用 `eth0` 作为 LAN，`eth1` 作为有线 WAN，本项目按 `ucidef_set_interfaces_lan_wan eth0 eth1` 生成默认网口布局。
 - 官方 PR 当前只把两个 WiFi 指示灯交给 OpenWrt 管理，其他 LED 可能由硬件或厂商服务控制。本项目保持官方 LED 配置，不再额外添加 `pwm_led`。
 - 官方 PR 的 `factory` 分区读取方式是从 `mmcblk0p2` 的 `eeprom@0` 读取 `0x1e00` 字节作为 WiFi EEPROM，没有在 `factory` 分区定义有线 MAC。
-- 你当前实机反馈的 `/dev/mmcblk0p2` 内容为全 0，因此即使使用官方 PR 的 EEPROM 读取方式，WiFi 校准仍可能加载失败。这个问题后续需要继续对照官方固件确认校准数据来源，不建议盲目自动写入。
+- 你当前实机反馈的 `/dev/mmcblk0p2` 内容为全 0，因此即使使用官方 PR 的 EEPROM 读取方式，WiFi 校准仍可能加载失败。官方 PR 目前提到可从厂商/PadavanOnly 固件中取 `MT7991_MT7976_EEPROM_BE5040_iPAiLNA.bin` 写入 `mmcblk0p2`，但本项目不会自动写入该分区，避免误写校准数据。
 - MAC 地址默认以 `/dev/mmcblk0p1` 的 U-Boot 环境变量 `ethaddr` 为基准连续派生；如果 U-Boot 环境失效，则使用 eMMC CID 生成稳定本地 MAC 作为二级兜底。ETH0 使用 `base + 0`，ETH1 使用 `base + 1`，2.4G WiFi 使用 `base + 2`，5G WiFi 使用 `base + 3`。
+
+## WiFi EEPROM 手动修复参考
+
+如果系统日志出现 `mt7996e ... eeprom load fail, use default bin`，并且确认 `/dev/mmcblk0p2` 全 0，可参考官方 PR 的说明手动写入厂商 EEPROM 文件。
+
+前提：
+
+- 你已经确认手头文件来自适配 H5000M / MT7992 2+3 天线形态的厂商固件。
+- 文件名通常为 `MT7991_MT7976_EEPROM_BE5040_iPAiLNA.bin`。
+- 该操作会直接写入 eMMC factory 分区，请先确认设备和文件来源，不要盲目执行。
+
+参考命令：
+
+```sh
+ls -lh /lib/firmware/MT7991_MT7976_EEPROM_BE5040_iPAiLNA.bin
+hexdump -C /dev/mmcblk0p2 | head -n 20
+
+dd if=/lib/firmware/MT7991_MT7976_EEPROM_BE5040_iPAiLNA.bin of=/dev/mmcblk0p2 bs=1 count=7680
+sync
+reboot
+```
+
+写入后可检查：
+
+```sh
+dmesg | grep -iE 'mt799|mt76|eeprom|cal|firmware'
+iwinfo
+```
 
 ## 项目做什么
 
