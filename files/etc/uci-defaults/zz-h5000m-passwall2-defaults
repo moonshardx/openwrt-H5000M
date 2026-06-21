@@ -113,10 +113,14 @@ config shunt_rules 'speedtest_services'
 	option network 'tcp,udp'
 	option domain_list 'geosite:speedtest'
 
-config shunt_rules 'Steam_Platform'
-	option remarks 'Steam平台'
+config shunt_rules 'Game_Platform'
+	option remarks '游戏平台'
 	option network 'tcp,udp'
-	option domain_list 'geosite:steam'
+	option domain_list 'geosite:steam
+geosite:epicgames
+geosite:xbox
+geosite:playstation
+geosite:nintendo'
 
 config shunt_rules 'ai_dev_services'
 	option remarks 'AI与开发服务'
@@ -233,7 +237,7 @@ config nodes 'h5000m_shunt'
 	option microsoft_services '_direct'
 	option China '_direct'
 	option speedtest_services '_direct'
-	option Steam_Platform '_direct'
+	option Game_Platform '_direct'
 	option ai_dev_services 'auto_select'
 	option streaming_services 'lax'
 	option social_services 'auto_select'
