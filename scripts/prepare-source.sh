@@ -13,12 +13,22 @@ INCLUDE_MOSDNS="${INCLUDE_MOSDNS:-false}"
 INCLUDE_UPNP="${INCLUDE_UPNP:-false}"
 INCLUDE_HOMEPROXY="${INCLUDE_HOMEPROXY:-false}"
 
+git config --global --unset-all http.proxy >/dev/null 2>&1 || true
+git config --global --unset-all https.proxy >/dev/null 2>&1 || true
+git config --global http.version HTTP/1.1
+git config --global http.lowSpeedLimit 0
+git config --global http.postBuffer 524288000
+
 if [ -d "${SRC_DIR}/.git" ]; then
   echo "更新已有 OpenWrt 官方源码：${REF}"
   git -C "${SRC_DIR}" remote set-url origin "${REPO_URL}"
   git -C "${SRC_DIR}" reset --hard HEAD
-  git -C "${SRC_DIR}" fetch --tags --depth=1 origin "${REF}"
-  git -C "${SRC_DIR}" checkout --detach FETCH_HEAD
+  if git -C "${SRC_DIR}" rev-parse --verify --quiet "refs/tags/${REF}^{commit}" >/dev/null; then
+    git -C "${SRC_DIR}" checkout --detach "refs/tags/${REF}^{commit}"
+  else
+    git -C "${SRC_DIR}" fetch --tags --depth=1 origin "${REF}"
+    git -C "${SRC_DIR}" checkout --detach FETCH_HEAD
+  fi
 else
   echo "克隆 OpenWrt 官方源码：${REF}"
   mkdir -p "$(dirname "${SRC_DIR}")"
