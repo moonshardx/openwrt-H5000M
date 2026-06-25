@@ -20,6 +20,14 @@ if [ -f /etc/config/luci ]; then
 	uci -q commit luci
 fi
 
+if [ -f /etc/config/upnpd ]; then
+	logger -t h5000m-defaults "Enable UPnP and NAT-PMP by default"
+	uci -q set upnpd.config.enabled='1'
+	uci -q set upnpd.config.enable_natpmp='1'
+	uci -q set upnpd.config.enable_upnp='1'
+	uci -q commit upnpd
+fi
+
 read_uboot_env() {
 	local key="$1"
 	[ -e /dev/mmcblk0p1 ] || return 1
