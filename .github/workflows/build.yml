@@ -91,7 +91,32 @@ jobs:
 
     steps:
       - name: 检出项目
-        uses: actions/checkout@v4
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config --global --unset-all http.proxy || true
+          git config --global --unset-all https.proxy || true
+          git config --global http.version HTTP/1.1
+          git config --global protocol.version 1
+          git config --global http.lowSpeedLimit 0
+          git config --global http.postBuffer 524288000
+
+          repo_url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf .git
+          git init
+          git remote add origin "${repo_url}"
+          for attempt in 1 2 3; do
+            if git fetch --depth=1 origin "${GITHUB_SHA}"; then
+              git checkout --force FETCH_HEAD
+              break
+            fi
+            if [ "${attempt}" = "3" ]; then
+              echo "项目检出失败。"
+              exit 1
+            fi
+            echo "项目检出失败，等待后重试：${attempt}/3"
+            sleep $((attempt * 10))
+          done
 
       - name: 准备本地增量编译目录
         if: ${{ inputs.runner_type == 'self-hosted' }}
