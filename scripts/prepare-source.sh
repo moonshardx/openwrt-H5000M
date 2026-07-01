@@ -91,9 +91,23 @@ if [ "${INCLUDE_NIKKI}" = "true" ]; then
   append_feed_once "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git"
 fi
 
-echo "添加 Argon 主题 feed：jerrykuku/luci-theme-argon"
-append_feed_once "src-git argon https://github.com/jerrykuku/luci-theme-argon.git"
-append_feed_once "src-git argon_config https://github.com/jerrykuku/luci-app-argon-config.git"
+echo "克隆 Argon 主题到 package/（Argon 仓库 Makefile 在根目录，无法作为 src-git feed 使用）"
+clone_package() {
+  local name="$1" url="$2" attempt
+  rm -rf "${SRC_DIR}/package/${name}"
+  for attempt in 1 2 3; do
+    if git clone --depth=1 "${url}" "${SRC_DIR}/package/${name}"; then
+      return 0
+    fi
+    echo "克隆 ${name} 失败，重试：${attempt}/3"
+    rm -rf "${SRC_DIR}/package/${name}"
+    sleep 5
+  done
+  echo "克隆 ${name} 失败。"
+  exit 1
+}
+clone_package luci-theme-argon https://github.com/jerrykuku/luci-theme-argon.git
+clone_package luci-app-argon-config https://github.com/jerrykuku/luci-app-argon-config.git
 
 echo "写入默认 LAN IP、root 密码、WAN 优先级和软件源清理脚本"
 mkdir -p "${SRC_DIR}/files"
