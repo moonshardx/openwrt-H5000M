@@ -90,6 +90,8 @@ require_config "CONFIG_PACKAGE_luci-theme-argon"
 require_config "CONFIG_PACKAGE_luci-app-argon-config"
 optional_config "CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn"
 require_config "CONFIG_PACKAGE_coreutils-timeout"
+require_config "CONFIG_PACKAGE_kmod-tcp-bbr"
+require_config "CONFIG_PACKAGE_kmod-sched"
 
 if [ "${INCLUDE_MT5700M}" = "true" ]; then
   require_config "CONFIG_PACKAGE_luci-app-mt5700m"
