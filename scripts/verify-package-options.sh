@@ -89,6 +89,7 @@ require_config "CONFIG_PACKAGE_luci-app-h5000m-netmode"
 require_config "CONFIG_PACKAGE_luci-theme-argon"
 require_config "CONFIG_PACKAGE_luci-app-argon-config"
 optional_config "CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn"
+require_config "CONFIG_PACKAGE_coreutils-timeout"
 
 if [ "${INCLUDE_MT5700M}" = "true" ]; then
   require_config "CONFIG_PACKAGE_luci-app-mt5700m"
