@@ -1,6 +1,6 @@
 # openwrt-H5000M
 
-这是一个用于构建 Hiveton/Airpi H5000M 固件的项目。主源码使用 OpenWrt 官方仓库 `openwrt/openwrt`，默认版本为 `v25.12.4`，构建时自动叠加 H5000M 设备适配和可选插件。
+这是一个用于构建 Hiveton/Airpi H5000M 固件的项目。主源码使用 OpenWrt 官方仓库 `openwrt/openwrt`，默认版本为 `v25.12.5`，构建时自动叠加 H5000M 设备适配和可选插件。
 
 ## 上游 H5000M PR 注意事项
 
@@ -95,7 +95,7 @@ https://github.com/openwrt/openwrt/pull/21398
 
 建议输入：
 
-- `openwrt_ref`: `v25.12.4`
+- `openwrt_ref`: `v25.12.5`
 - `runner_type`: `github-hosted` 或 `self-hosted`
 - `qmodem_original`: 默认开启，使用 `luci-app-qmodem` 原版界面
 - `qmodem_next`: 默认关闭，不要和 `qmodem_original` 同时开启
@@ -126,7 +126,7 @@ INCLUDE_PASSWALL2=true \
 INCLUDE_MOSDNS=true \
 INCLUDE_UPNP=true \
 INCLUDE_HOMEPROXY=false \
-bash ./scripts/prepare-source.sh v25.12.4
+bash ./scripts/prepare-source.sh v25.12.5
 
 cd openwrt
 ./scripts/feeds update -a

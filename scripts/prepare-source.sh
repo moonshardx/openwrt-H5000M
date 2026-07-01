@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_DIR="${OPENWRT_SRC_DIR:-${ROOT_DIR}/openwrt}"
-REF="${1:-${OPENWRT_REF:-v25.12.4}}"
+REF="${1:-${OPENWRT_REF:-v25.12.5}}"
 REPO_URL="${OPENWRT_REPO:-https://github.com/openwrt/openwrt.git}"
 
 INCLUDE_QMODEM_ORIGINAL="${INCLUDE_QMODEM_ORIGINAL:-${INCLUDE_QMODEM:-false}}"
