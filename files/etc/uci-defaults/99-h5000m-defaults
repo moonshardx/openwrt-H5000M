@@ -208,8 +208,9 @@ done
 uci -q commit wireless
 
 logger -t h5000m-defaults "Remove build-only apk feed entries"
-if [ -f /etc/apk/repositories.d/distfeeds.list ]; then
-	sed -i '/\/qmodem\//d;/ qmodem[ _-]/d;/ qmodem$/d;/\/small_package\//d;/ small_package[ _-]/d;/ small_package$/d;/\/video\//d' /etc/apk/repositories.d/distfeeds.list
-fi
+for feedlist in /etc/apk/repositories.d/distfeeds.list /etc/apk/repositories.d/customfeeds.list; do
+	[ -f "${feedlist}" ] || continue
+	sed -i '/\/qmodem\//d;/ qmodem[ _-]/d;/ qmodem$/d;/\/nikki\//d;/ nikki[ _-]/d;/ nikki$/d;/\/small_package\//d;/ small_package[ _-]/d;/ small_package$/d;/\/video\//d' "${feedlist}"
+done
 
 exit 0
