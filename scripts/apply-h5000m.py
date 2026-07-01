@@ -281,7 +281,7 @@ def main() -> int:
     if not mt7987a.exists():
         raise SystemExit(
             "The selected OpenWrt source lacks target/linux/mediatek/dts/mt7987a.dtsi.\n"
-            "H5000M needs MT7987 platform support. Use v25.12.4/master or backport MT7987 first."
+            "H5000M needs MT7987 platform support. Use a v25.12.x release or master that ships MT7987, or backport it first."
         )
 
     dts_path = root / "target/linux/mediatek/dts/mt7987a-hiveton-h5000m.dts"
