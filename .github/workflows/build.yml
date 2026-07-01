@@ -28,12 +28,12 @@ on:
         description: "1. QModem 原版：5G 模块管理"
         required: true
         type: boolean
-        default: true
+        default: false
       qmodem_next:
         description: "2. QModem Next：新版界面和扩展功能"
         required: true
         type: boolean
-        default: false
+        default: true
       upnp:
         description: "3. UPnP：端口自动映射"
         required: true
@@ -43,29 +43,34 @@ on:
         description: "4. PassWall2：代理与分流"
         required: true
         type: boolean
-        default: true
+        default: false
       homeproxy:
         description: "5. HomeProxy：代理插件"
         required: true
         type: boolean
         default: false
+      nikki:
+        description: "6. Nikki：Mihomo 透明代理"
+        required: true
+        type: boolean
+        default: true
       mosdns:
-        description: "6. MosDNS：DNS 分流插件"
+        description: "7. MosDNS：DNS 分流插件"
         required: true
         type: boolean
         default: false
       vnstat:
-        description: "7. vnStat2：累计流量统计"
+        description: "8. vnStat2：累计流量统计"
         required: true
         type: boolean
         default: true
       mt5700m:
-        description: "8. MT5700M：原生管理页面"
+        description: "9. MT5700M：原生管理页面"
         required: true
         type: boolean
         default: true
       eeprom_autoflash:
-        description: "9. EEPROM：首次启动自动写入 WiFi 校准数据"
+        description: "10. EEPROM：首次启动自动写入 WiFi 校准数据"
         required: true
         type: boolean
         default: false
@@ -173,6 +178,7 @@ jobs:
           INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
           INCLUDE_UPNP: ${{ inputs.upnp && 'true' || 'false' }}
           INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
+          INCLUDE_NIKKI: ${{ inputs.nikki && 'true' || 'false' }}
           INCLUDE_VNSTAT: ${{ inputs.vnstat && 'true' || 'false' }}
           INCLUDE_MT5700M: ${{ inputs.mt5700m && 'true' || 'false' }}
         run: |
@@ -225,6 +231,7 @@ jobs:
           INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
           INCLUDE_UPNP: ${{ inputs.upnp && 'true' || 'false' }}
           INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
+          INCLUDE_NIKKI: ${{ inputs.nikki && 'true' || 'false' }}
           INCLUDE_VNSTAT: ${{ inputs.vnstat && 'true' || 'false' }}
           INCLUDE_MT5700M: ${{ inputs.mt5700m && 'true' || 'false' }}
         run: bash ./scripts/apply-package-options.sh
@@ -278,6 +285,7 @@ jobs:
           INCLUDE_MOSDNS: ${{ inputs.mosdns && 'true' || 'false' }}
           INCLUDE_UPNP: ${{ inputs.upnp && 'true' || 'false' }}
           INCLUDE_HOMEPROXY: ${{ inputs.homeproxy && 'true' || 'false' }}
+          INCLUDE_NIKKI: ${{ inputs.nikki && 'true' || 'false' }}
           INCLUDE_VNSTAT: ${{ inputs.vnstat && 'true' || 'false' }}
           INCLUDE_MT5700M: ${{ inputs.mt5700m && 'true' || 'false' }}
         run: bash ./scripts/verify-package-options.sh

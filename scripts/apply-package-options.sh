@@ -11,6 +11,7 @@ INCLUDE_PASSWALL2="${INCLUDE_PASSWALL2:-${INCLUDE_PASSWALL:-false}}"
 INCLUDE_MOSDNS="${INCLUDE_MOSDNS:-false}"
 INCLUDE_UPNP="${INCLUDE_UPNP:-false}"
 INCLUDE_HOMEPROXY="${INCLUDE_HOMEPROXY:-false}"
+INCLUDE_NIKKI="${INCLUDE_NIKKI:-false}"
 INCLUDE_VNSTAT="${INCLUDE_VNSTAT:-false}"
 INCLUDE_MT5700M="${INCLUDE_MT5700M:-false}"
 
@@ -32,6 +33,9 @@ CONFIG_PACKAGE_luci-mod-status=y
 CONFIG_PACKAGE_luci-mod-system=y
 CONFIG_PACKAGE_luci-mod-network=y
 CONFIG_PACKAGE_luci-theme-bootstrap=y
+CONFIG_PACKAGE_luci-theme-argon=y
+CONFIG_PACKAGE_luci-app-argon-config=y
+CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn=y
 CONFIG_PACKAGE_luci-app-firewall=y
 CONFIG_PACKAGE_luci-app-package-manager=y
 CONFIG_PACKAGE_luci-app-ttyd=y
@@ -166,6 +170,15 @@ if [ "${INCLUDE_HOMEPROXY}" = "true" ]; then
   echo "启用 HomeProxy"
   append_config <<'EOF'
 CONFIG_PACKAGE_luci-app-homeproxy=y
+EOF
+fi
+
+if [ "${INCLUDE_NIKKI}" = "true" ]; then
+  echo "启用 Nikki"
+  append_config <<'EOF'
+CONFIG_PACKAGE_nikki=y
+CONFIG_PACKAGE_luci-app-nikki=y
+CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y
 EOF
 fi
 

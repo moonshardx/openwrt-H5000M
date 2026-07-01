@@ -12,6 +12,7 @@ INCLUDE_PASSWALL2="${INCLUDE_PASSWALL2:-${INCLUDE_PASSWALL:-false}}"
 INCLUDE_MOSDNS="${INCLUDE_MOSDNS:-false}"
 INCLUDE_UPNP="${INCLUDE_UPNP:-false}"
 INCLUDE_HOMEPROXY="${INCLUDE_HOMEPROXY:-false}"
+INCLUDE_NIKKI="${INCLUDE_NIKKI:-false}"
 
 git config --global --unset-all http.proxy >/dev/null 2>&1 || true
 git config --global --unset-all https.proxy >/dev/null 2>&1 || true
@@ -85,6 +86,15 @@ if [ "${need_small_package}" = "true" ]; then
   append_feed_once "src-git small_package https://github.com/kenzok8/small-package.git"
 fi
 
+if [ "${INCLUDE_NIKKI}" = "true" ]; then
+  echo "添加 Nikki 第三方 feed：nikkinikki-org/OpenWrt-nikki"
+  append_feed_once "src-git nikki https://github.com/nikkinikki-org/OpenWrt-nikki.git"
+fi
+
+echo "添加 Argon 主题 feed：jerrykuku/luci-theme-argon"
+append_feed_once "src-git argon https://github.com/jerrykuku/luci-theme-argon.git"
+append_feed_once "src-git argon_config https://github.com/jerrykuku/luci-app-argon-config.git"
+
 echo "写入默认 LAN IP、root 密码、WAN 优先级和软件源清理脚本"
 mkdir -p "${SRC_DIR}/files"
 cp -a "${ROOT_DIR}/files/." "${SRC_DIR}/files/"
@@ -100,7 +110,7 @@ echo "后续本地编译步骤："
 echo "  cd ${SRC_DIR}"
 echo "  ./scripts/feeds update -a"
 echo "  ./scripts/feeds install -a"
-echo "  INCLUDE_QMODEM_ORIGINAL=${INCLUDE_QMODEM_ORIGINAL} INCLUDE_QMODEM_NEXT=${INCLUDE_QMODEM_NEXT} INCLUDE_PASSWALL2=${INCLUDE_PASSWALL2} INCLUDE_MOSDNS=${INCLUDE_MOSDNS} INCLUDE_UPNP=${INCLUDE_UPNP} INCLUDE_HOMEPROXY=${INCLUDE_HOMEPROXY} bash ${ROOT_DIR}/scripts/apply-package-options.sh"
+echo "  INCLUDE_QMODEM_ORIGINAL=${INCLUDE_QMODEM_ORIGINAL} INCLUDE_QMODEM_NEXT=${INCLUDE_QMODEM_NEXT} INCLUDE_PASSWALL2=${INCLUDE_PASSWALL2} INCLUDE_MOSDNS=${INCLUDE_MOSDNS} INCLUDE_UPNP=${INCLUDE_UPNP} INCLUDE_HOMEPROXY=${INCLUDE_HOMEPROXY} INCLUDE_NIKKI=${INCLUDE_NIKKI} bash ${ROOT_DIR}/scripts/apply-package-options.sh"
 echo "  make defconfig"
 echo "  make download -j\$(nproc)"
 echo "  make -j\$(nproc)"

@@ -11,6 +11,7 @@ INCLUDE_PASSWALL2="${INCLUDE_PASSWALL2:-${INCLUDE_PASSWALL:-false}}"
 INCLUDE_MOSDNS="${INCLUDE_MOSDNS:-false}"
 INCLUDE_UPNP="${INCLUDE_UPNP:-false}"
 INCLUDE_HOMEPROXY="${INCLUDE_HOMEPROXY:-false}"
+INCLUDE_NIKKI="${INCLUDE_NIKKI:-false}"
 INCLUDE_VNSTAT="${INCLUDE_VNSTAT:-false}"
 INCLUDE_MT5700M="${INCLUDE_MT5700M:-false}"
 
@@ -85,6 +86,9 @@ optional_config "CONFIG_PACKAGE_luci-i18n-package-manager-zh-cn"
 optional_config "CONFIG_PACKAGE_luci-i18n-ttyd-zh-cn"
 require_config "CONFIG_PACKAGE_luci-app-h5000m-fancontrol"
 require_config "CONFIG_PACKAGE_luci-app-h5000m-netmode"
+require_config "CONFIG_PACKAGE_luci-theme-argon"
+require_config "CONFIG_PACKAGE_luci-app-argon-config"
+optional_config "CONFIG_PACKAGE_luci-i18n-argon-config-zh-cn"
 
 if [ "${INCLUDE_MT5700M}" = "true" ]; then
   require_config "CONFIG_PACKAGE_luci-app-mt5700m"
@@ -168,6 +172,12 @@ fi
 
 if [ "${INCLUDE_HOMEPROXY}" = "true" ]; then
   require_config "CONFIG_PACKAGE_luci-app-homeproxy"
+fi
+
+if [ "${INCLUDE_NIKKI}" = "true" ]; then
+  require_config "CONFIG_PACKAGE_nikki"
+  require_config "CONFIG_PACKAGE_luci-app-nikki"
+  optional_config "CONFIG_PACKAGE_luci-i18n-nikki-zh-cn"
 fi
 
 if [ "${INCLUDE_MOSDNS}" = "true" ]; then
